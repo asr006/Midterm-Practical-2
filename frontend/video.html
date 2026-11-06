@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video - YouTube</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRxbd4UrNiffdFaTLiTIZ_ZsmDE6Y_feTu8FqE-PTK-wQ&s=10"
+            alt="Icono de burger" width="70">
+        <img src="https://w7.pngwing.com/pngs/936/468/png-transparent-youtube-logo-youtube-logo-computer-icons-subscribe-angle-rectangle-airplane-thumbnail.png"
+            alt="Logo de YouTube" width="120">
+
+        <h1>YouTube</h1>
+    </header>
+
+    <nav>
+        <a href="index.html">Inicio</a>
+        <a href="index.html#videos">Videos</a>
+    </nav>
+
+    <aside>
+        <h2>Menú</h2>
+
+        <a href="index.html">Inicio</a>
+        <a href="index.html#videos">Videos</a>
+    </aside>
+
+    <main class="pagina-video">
+
+        <article class="video-grande">
+
+            <video controls></video>
+
+            <h2 class="titulo"></h2>
+
+            <div class="canal">
+                <img class="perfil"
+                    src="https://img.magnific.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80"
+                    alt="Foto de perfil">
+                <h3 class="nombre-canal"></h3>
+            </div>
+
+            <p class="vistas"></p>
+            <p class="descripcion"></p>
+
+            <section class="comentarios">
+                <h3>Comentarios</h3>
+
+                <form class="form-comentario">
+                    <input type="text" class="autor" placeholder="Tu nombre" required>
+                    <input type="text" class="texto" placeholder="Escribe un comentario" required>
+                    <button type="submit">Comentar</button>
+                </form>
+
+                <ul class="lista-comentarios"></ul>
+            </section>
+
+        </article>
+
+        <aside class="recomendados-video">
+            <h2>Videos recomendados</h2>
+            <div class="lista-recomendaciones"></div>
+        </aside>
+
+    </main>
+
+    <script>
+        const API_URL = "http://localhost:8000"
+        const videoId = new URLSearchParams(window.location.search).get("id")
+
+        const videoContainer = document.querySelector(".video-grande video")
+        const videoTitulo = document.querySelector(".titulo")
+        const nombreCanal = document.querySelector(".nombre-canal")
+        const vistas = document.querySelector(".vistas")
+        const descripcion = document.querySelector(".descripcion")
+        const formComentario = document.querySelector(".form-comentario")
+        const inputAutor = document.querySelector(".autor")
+        const inputTexto = document.querySelector(".texto")
+        const listaComentarios = document.querySelector(".lista-comentarios")
+        const listaRecomendaciones = document.querySelector(".lista-recomendaciones")
+
+        fetch(`${API_URL}/videos/${videoId}`)
+            .then(res => res.json())
+            .then(video => {
+                document.title = `${video.titulo} - YouTube`
+                videoContainer.src = video.source
+                videoContainer.poster = video.miniatura
+                videoTitulo.textContent = video.titulo
+                nombreCanal.textContent = video.canal
+                vistas.textContent = `${video.vistas} vistas - ${video.likes} likes - ${video.categoria}`
+                descripcion.textContent = video.descripcion
+            })
+
+        const crearComentario = (comentario) => {
+            const item = document.createElement("li")
+            const autor = document.createElement("strong")
+            const fecha = document.createElement("span")
+            const texto = document.createElement("p")
+
+            item.className = "comentario"
+            autor.textContent = comentario.autor
+            fecha.className = "texto-gris"
+            fecha.textContent = ` ${comentario.fecha}`
+            texto.textContent = comentario.texto
+
+            item.appendChild(autor)
+            item.appendChild(fecha)
+            item.appendChild(texto)
+
+            return item
+        }
+
+        fetch(`${API_URL}/comments/${videoId}`)
+            .then(res => res.json())
+            .then(comentarios => {
+                comentarios.forEach(comentario => {
+                    listaComentarios.appendChild(crearComentario(comentario))
+                })
+            })
+
+        formComentario.addEventListener("submit", (evento) => {
+            evento.preventDefault()
+
+            fetch(`${API_URL}/comments/${videoId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ autor: inputAutor.value, texto: inputTexto.value })
+            })
+                .then(res => res.json())
+                .then(comentario => {
+                    listaComentarios.prepend(crearComentario(comentario))
+                    inputTexto.value = ""
+                })
+        })
+
+        fetch(`${API_URL}/videos/${videoId}/recomendaciones`)
+            .then(res => res.json())
+            .then(videos => {
+                videos.forEach(video => {
+                    const enlace = document.createElement("a")
+                    const miniatura = document.createElement("img")
+                    const info = document.createElement("div")
+                    const titulo = document.createElement("h4")
+                    const canal = document.createElement("p")
+
+                    enlace.className = "recomendado"
+                    enlace.href = `video.html?id=${video.id}`
+                    miniatura.src = video.miniatura
+                    miniatura.alt = video.titulo
+                    titulo.textContent = video.titulo
+                    canal.className = "texto-gris"
+                    canal.textContent = video.canal
+
+                    info.appendChild(titulo)
+                    info.appendChild(canal)
+                    enlace.appendChild(miniatura)
+                    enlace.appendChild(info)
+
+                    listaRecomendaciones.appendChild(enlace)
+                })
+            })
+    </script>
+</body>
+
+</html>
